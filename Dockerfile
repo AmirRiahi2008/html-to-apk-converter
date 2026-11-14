@@ -23,7 +23,8 @@ RUN npm init -y && npm i @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
 RUN cd android && ok=0; for i in 1 2 3 4 5 6; do if ./gradlew assembleDebug --no-daemon; then ok=1; break; fi; echo "retry $i"; sleep 10; done; [ "$ok" = 1 ]
 
 WORKDIR /app
-COPY package.json server.js index.html ./
+COPY package.json server.js ./
+COPY web ./web
 RUN npm install --omit=dev
 EXPOSE 3000
 CMD ["node", "server.js"]

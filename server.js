@@ -8,6 +8,16 @@ const { execFile } = require('child_process');
 const T = process.env.TEMPLATE || '/opt/template';   // پروژه‌ی Capacitor آماده
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 const app = express();
+app.use((req, res, next) => {
+  res.set({
+    'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN || '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Expose-Headers': 'Content-Disposition'
+  });
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
 let queue = Promise.resolve(); // ساخت‌ها یکی‌یکی انجام می‌شن
 
 const run = (cmd, args, cwd) => new Promise((ok, fail) =>
@@ -47,7 +57,7 @@ async function build(html, logo, name) {
   return fs.readFile(path.join(T, 'android/app/build/outputs/apk/debug/app-debug.apk'));
 }
 
-app.get('/', (_, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.use(express.static(path.join(__dirname, 'web')));
 
 app.post('/api/convert',
   upload.fields([{ name: 'file', maxCount: 1 }, { name: 'logo', maxCount: 1 }]),

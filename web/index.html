@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>تبدیل HTML به APK</title>
+<style>
+  :root{--bg:#f6f7f9;--card:#fff;--text:#1c1e21;--muted:#6b7280;--line:#d9dde3;--accent:#2563eb}
+  @media (prefers-color-scheme:dark){:root{--bg:#111318;--card:#1a1d24;--text:#eceef2;--muted:#9aa3b2;--line:#2e333d;--accent:#5b8def}}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--text);font-family:Tahoma,"Segoe UI",system-ui,sans-serif;padding:16px}
+  main{width:100%;max-width:440px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px}
+  h1{font-size:20px;margin:0 0 6px}
+  p{margin:0 0 18px;color:var(--muted);font-size:14px;line-height:1.8}
+  label.drop{display:flex;align-items:center;gap:12px;border:2px dashed var(--line);border-radius:12px;padding:14px;margin-bottom:12px;cursor:pointer;color:var(--muted);font-size:14px}
+  label.drop.on{border-color:var(--accent);color:var(--text)}
+  label.drop img{width:44px;height:44px;border-radius:10px;object-fit:contain;display:none}
+  input[type=file]{display:none}
+  input[type=text]{width:100%;margin:0 0 14px;padding:11px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--text);font:inherit}
+  button{width:100%;padding:12px;border:0;border-radius:10px;background:var(--accent);color:#fff;font:inherit;font-size:15px;cursor:pointer}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  #msg{margin-top:14px;font-size:13px;text-align:center;color:var(--muted);min-height:20px}
+  #dl{display:none;margin-top:12px;text-align:center}
+  #dl a{color:var(--accent)}
+</style>
+</head>
+<body>
+<main>
+  <h1>تبدیل HTML به اپ اندروید</h1>
+  <p>فایل HTML، لوگو و نام اپ رو وارد کن تا APK آماده‌ی نصب بگیری.</p>
+
+  <label class="drop" id="dropHtml"><span id="htmlName">انتخاب فایل HTML</span>
+    <input type="file" id="html" accept=".html,.htm,text/html"></label>
+
+  <label class="drop" id="dropLogo"><img id="prev" alt=""><span id="logoName">انتخاب لوگوی اپ (PNG / JPG)</span>
+    <input type="file" id="logo" accept="image/*"></label>
+
+  <input type="text" id="name" placeholder="نام برنامه" maxlength="40">
+  <button id="go" disabled>ساخت APK</button>
+  <div id="msg"></div>
+  <div id="dl"><a id="link">اگر دانلود شروع نشد، اینجا بزن</a></div>
+</main>
+<script src="config.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+let html=null,logo=null;
+function check(){$('go').disabled=!(html&&logo&&$('name').value.trim())}
+$('html').onchange=e=>{html=e.target.files[0]||null;$('htmlName').textContent=html?html.name:'انتخاب فایل HTML';$('dropHtml').classList.toggle('on',!!html);check()};
+$('logo').onchange=e=>{
+  logo=e.target.files[0]||null;
+  $('logoName').textContent=logo?logo.name:'انتخاب لوگوی اپ (PNG / JPG)';
+  $('dropLogo').classList.toggle('on',!!logo);
+  $('prev').style.display=logo?'block':'none';
+  if(logo)$('prev').src=URL.createObjectURL(logo);
+  check();
+};
+$('name').oninput=check;
+$('go').onclick=async()=>{
+  $('go').disabled=true;$('dl').style.display='none';
+  $('msg').textContent='در حال ساخت APK... (ممکنه چند دقیقه طول بکشه)';
+  try{
+    const name=$('name').value.trim();
+    const fd=new FormData();
+    fd.append('file',html);fd.append('logo',logo);fd.append('appName',name);
+    const r=await fetch((window.API_URL||'')+'/api/convert',{method:'POST',body:fd});
+    if(!r.ok)throw new Error((await r.text())||'خطا');
+    const url=URL.createObjectURL(await r.blob());
+    const a=$('link');a.href=url;a.download=(name.replace(/[\\/:*?"<>|]/g,'')||'app')+'.apk';a.click();
+    $('dl').style.display='block';
+    $('msg').textContent='APK آماده شد.';
+  }catch(e){$('msg').textContent='خطا: '+e.message.slice(0,200)}
+  check();
+};
+</script>
+</body>
+</html>
